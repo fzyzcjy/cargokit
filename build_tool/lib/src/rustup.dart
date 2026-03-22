@@ -98,7 +98,7 @@ class Rustup {
 
     // To list all non-custom toolchains, we need to filter out lines that
     // don't start with "stable", "beta", or "nightly".
-    final nonCustom = RegExp(r'^(stable|beta|nightly)(-|$)');
+    final nonCustom = RegExp(r'^(stable|beta|nightly)');
     final lines = res.stdout
         .toString()
         .split('\n')
