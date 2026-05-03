@@ -100,6 +100,8 @@ class PrecompileBinaries {
 
     final rustup = Rustup();
 
+    // Filter out targets that already have all artifacts
+    final targetsToBuild = <MapEntry<List<String>, Target>>[];
     for (final target in targets) {
       final artifactNames = getArtifactNames(
         target: target,
@@ -114,7 +116,11 @@ class PrecompileBinaries {
         _log.info("All artifacts for $target already exist - skipping");
         continue;
       }
-
+      targetsToBuild.add(MapEntry(artifactNames, target));
+    }
+    final buildResults = await Future.wait(targetsToBuild.map((entry) async {
+      final artifactNames = entry.key;
+      final target = entry.value;
       _log.info('Building for $target');
 
       final builder =
@@ -148,7 +154,13 @@ class PrecompileBinaries {
         assets.add(create);
         assets.add(signatureCreate);
       }
-      _log.info('Uploading assets: ${assets.map((e) => e.name)}');
+      return MapEntry(target, assets);
+    }));
+
+    for (final entry in buildResults) {
+      final target = entry.key;
+      final assets = entry.value;
+      _log.info('Uploading assets for $target: ${assets.map((e) => e.name)}');
       for (final asset in assets) {
         // This seems to be failing on CI so do it one by one
         int retryCount = 0;
@@ -168,7 +180,6 @@ class PrecompileBinaries {
         }
       }
     }
-
     _log.info('Cleaning up');
     tempDir.deleteSync(recursive: true);
   }
