@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:flutter_platform_utils/flutter_platform_utils.dart';
 
 import 'util.dart';
 
@@ -129,7 +128,7 @@ class Target {
 
   /// Returns buildable targets on current host platform ignoring Android targets.
   static List<Target> buildableTargets() {
-    if (PlatformUtils.isOhos) {
+    if (Platform.operatingSystem == 'ohos') {
       final arch = (runCommand('arch', []).stdout as String).trim();
       if (arch.trim() == 'aarch64') {
         return [Target.forRustTriple('aarch64-unknown-linux-ohos')!];
