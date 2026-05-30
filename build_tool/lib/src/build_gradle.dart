@@ -22,7 +22,8 @@ class BuildGradle {
           final target = Target.forFlutterName(arch);
           if (target == null) {
             throw Exception(
-                "Unknown darwin target or platform: $arch, ${Environment.darwinPlatformName}");
+              "Unknown darwin target or platform: $arch, ${Environment.darwinPlatformName}",
+            );
           }
           return target;
         })
@@ -30,20 +31,24 @@ class BuildGradle {
         .toList();
 
     final environment = BuildEnvironment.fromEnvironment(isAndroid: true);
-    final provider =
-        ArtifactProvider(environment: environment, userOptions: userOptions);
+    final provider = ArtifactProvider(
+      environment: environment,
+      userOptions: userOptions,
+    );
     final artifacts = await provider.getArtifacts(targets);
 
-    await Future.wait(targets.map((target) async {
-      final libs = artifacts[target]!;
-      final outputDir = path.join(Environment.outputDir, target.android!);
-      await Directory(outputDir).create(recursive: true);
+    await Future.wait(
+      targets.map((target) async {
+        final libs = artifacts[target]!;
+        final outputDir = path.join(Environment.outputDir, target.android!);
+        await Directory(outputDir).create(recursive: true);
 
-      for (final lib in libs) {
-        if (lib.type == AritifactType.dylib) {
-          await File(lib.path).copy(path.join(outputDir, lib.finalFileName));
+        for (final lib in libs) {
+          if (lib.type == AritifactType.dylib) {
+            await File(lib.path).copy(path.join(outputDir, lib.finalFileName));
+          }
         }
-      }
-    }));
+      }),
+    );
   }
 }

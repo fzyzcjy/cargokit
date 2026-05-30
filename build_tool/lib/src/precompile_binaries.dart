@@ -81,9 +81,7 @@ class PrecompileBinaries {
 
     tempDir.createSync(recursive: true);
 
-    final crateOptions = CargokitCrateOptions.load(
-      manifestDir: manifestDir,
-    );
+    final crateOptions = CargokitCrateOptions.load(manifestDir: manifestDir);
 
     final buildEnvironment = BuildEnvironment(
       configuration: BuildConfiguration.release,
@@ -118,44 +116,48 @@ class PrecompileBinaries {
       }
       targetsToBuild.add(MapEntry(artifactNames, target));
     }
-    final buildResults = await Future.wait(targetsToBuild.map((entry) async {
-      final artifactNames = entry.key;
-      final target = entry.value;
-      _log.info('Building for $target');
+    final buildResults = await Future.wait(
+      targetsToBuild.map((entry) async {
+        final artifactNames = entry.key;
+        final target = entry.value;
+        _log.info('Building for $target');
 
-      final builder =
-          RustBuilder(target: target, environment: buildEnvironment);
-      builder.prepare(rustup);
-      final res = await builder.build();
-
-      final assets = <CreateReleaseAsset>[];
-      for (final name in artifactNames) {
-        final file = File(path.join(res, name));
-        if (!file.existsSync()) {
-          throw Exception('Missing artifact: ${file.path}');
-        }
-
-        final data = file.readAsBytesSync();
-        final create = CreateReleaseAsset(
-          name: PrecompileBinaries.fileName(target, name),
-          contentType: "application/octet-stream",
-          assetData: data,
+        final builder = RustBuilder(
+          target: target,
+          environment: buildEnvironment,
         );
-        final signature = sign(privateKey, data);
-        final signatureCreate = CreateReleaseAsset(
-          name: signatureFileName(target, name),
-          contentType: "application/octet-stream",
-          assetData: signature,
-        );
-        bool verified = verify(public(privateKey), data, signature);
-        if (!verified) {
-          throw Exception('Signature verification failed');
+        builder.prepare(rustup);
+        final res = await builder.build();
+
+        final assets = <CreateReleaseAsset>[];
+        for (final name in artifactNames) {
+          final file = File(path.join(res, name));
+          if (!file.existsSync()) {
+            throw Exception('Missing artifact: ${file.path}');
+          }
+
+          final data = file.readAsBytesSync();
+          final create = CreateReleaseAsset(
+            name: PrecompileBinaries.fileName(target, name),
+            contentType: "application/octet-stream",
+            assetData: data,
+          );
+          final signature = sign(privateKey, data);
+          final signatureCreate = CreateReleaseAsset(
+            name: signatureFileName(target, name),
+            contentType: "application/octet-stream",
+            assetData: signature,
+          );
+          bool verified = verify(public(privateKey), data, signature);
+          if (!verified) {
+            throw Exception('Signature verification failed');
+          }
+          assets.add(create);
+          assets.add(signatureCreate);
         }
-        assets.add(create);
-        assets.add(signatureCreate);
-      }
-      return MapEntry(target, assets);
-    }));
+        return MapEntry(target, assets);
+      }),
+    );
 
     for (final entry in buildResults) {
       final target = entry.key;
@@ -174,7 +176,8 @@ class PrecompileBinaries {
             }
             ++retryCount;
             _log.shout(
-                'Upload failed (attempt $retryCount, will retry): ${e.toString()}');
+              'Upload failed (attempt $retryCount, will retry): ${e.toString()}',
+            );
             await Future.delayed(Duration(seconds: 2));
           }
         }
@@ -197,16 +200,17 @@ class PrecompileBinaries {
     } on ReleaseNotFound {
       _log.info('Release not found - creating release $tagName');
       release = await repo.createRelease(
-          repositorySlug,
-          CreateRelease.from(
-            tagName: tagName,
-            name: 'Precompiled binaries ${hash.substring(0, 8)}',
-            targetCommitish: null,
-            isDraft: false,
-            isPrerelease: false,
-            body: 'Precompiled binaries for crate $packageName, '
-                'crate hash $hash.',
-          ));
+        repositorySlug,
+        CreateRelease.from(
+          tagName: tagName,
+          name: 'Precompiled binaries ${hash.substring(0, 8)}',
+          targetCommitish: null,
+          isDraft: false,
+          isPrerelease: false,
+          body: 'Precompiled binaries for crate $packageName, '
+              'crate hash $hash.',
+        ),
+      );
     }
     return release;
   }
