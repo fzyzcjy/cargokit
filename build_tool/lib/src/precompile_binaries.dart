@@ -180,6 +180,7 @@ class PrecompileBinaries {
         }
       }
     }
+
     _log.info('Cleaning up');
     tempDir.deleteSync(recursive: true);
   }
