@@ -96,18 +96,18 @@ class BuildEnvironment {
     );
     final crateInfo = CrateInfo.load(manifestDir);
     return BuildEnvironment(
-        configuration: buildConfiguration,
-        crateOptions: crateOptions,
-        targetTempDir: Environment.targetTempDir,
-        manifestDir: manifestDir,
-        crateInfo: crateInfo,
-        isAndroid: isAndroid,
-        androidSdkPath: isAndroid ? Environment.sdkPath : null,
-        androidNdkVersion: isAndroid ? Environment.ndkVersion : null,
-        androidMinSdkVersion:
-            isAndroid ? int.parse(Environment.minSdkVersion) : null,
-        javaHome: isAndroid ? Environment.javaHome : null,
-        ohosSdkHome: Environment.ohosSdkHome
+      configuration: buildConfiguration,
+      crateOptions: crateOptions,
+      targetTempDir: Environment.targetTempDir,
+      manifestDir: manifestDir,
+      crateInfo: crateInfo,
+      isAndroid: isAndroid,
+      androidSdkPath: isAndroid ? Environment.sdkPath : null,
+      androidNdkVersion: isAndroid ? Environment.ndkVersion : null,
+      androidMinSdkVersion:
+          isAndroid ? int.parse(Environment.minSdkVersion) : null,
+      javaHome: isAndroid ? Environment.javaHome : null,
+      ohosSdkHome: Environment.ohosSdkHome,
     );
   }
 }
