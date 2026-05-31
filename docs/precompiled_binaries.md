@@ -1,7 +1,7 @@
 # Precompiled Binaries
 
-Because Cargokit builds the Rust crate during Flutter build, it is inherently
-dependend on the Rust toolchain being installed on the developer's machine.
+Because Cargokit builds the Rust crate during Flutter build, it inherently
+depends on the Rust toolchain being installed on the developer's machine.
 
 To decrease the friction, it is possible for Cargokit to use precompiled binaries instead.
 
@@ -89,7 +89,8 @@ jobs:
           PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
 ```
 
-By default the `built_tool precompile-binaries` commands build and uploads the binaries for all targets buildable from current host. This can be overriden using the `--target <rust-triple>` argument.
+By default the `build_tool precompile-binaries` command builds and uploads the
+binaries for all targets buildable from the current host. This can be overridden
+using the `--target <rust-triple>` argument.
 
 Android binaries will be built when `--android-sdk-location` and `--android-ndk-version` arguments are provided.
-

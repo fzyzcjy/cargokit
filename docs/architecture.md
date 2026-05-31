@@ -8,7 +8,8 @@ In ideal conditions the end-developer using the plugin should not even be aware 
 
 Cargokit is meant to be included in Flutter plugin (or application) that contains the Rust crate to be built during the Flutter build process.
 
-Cargokit can be either incuded as git submodule or git subtree (required for plugins - as pub does not support submodules for git dependencies).
+Cargokit can be included as a git submodule or git subtree (required for
+plugins, since pub does not support submodules for git dependencies).
 
 For a step by step tutorial on integrating Cargokit with a Flutter plugin see https://matejknopp.com/post/flutter_plugin_in_rust_with_no_prebuilt_binaries/.
 

@@ -34,7 +34,7 @@ public_key: a4c3433798eb2c36edf2b94dbb4dd899d57496ca373a8982d8a792410b7f6445
   test('parseCargokitOptions', () {
     const yaml = '''
 cargo:
-  # For smalles binaries rebuilt the standard library with panic=abort
+  # For smallest binaries rebuild the standard library with panic=abort
   debug:
     toolchain: nightly
     extra_flags:

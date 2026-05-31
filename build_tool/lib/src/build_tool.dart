@@ -10,6 +10,7 @@ import 'android_environment.dart';
 import 'build_cmake.dart';
 import 'build_gradle.dart';
 import 'build_pod.dart';
+import 'exceptions.dart';
 import 'logging.dart';
 import 'options.dart';
 import 'precompile_binaries.dart';
@@ -89,8 +90,8 @@ class GenKeyCommand extends Command {
     final kp = generateKey();
     final private = HEX.encode(kp.privateKey.bytes);
     final public = HEX.encode(kp.publicKey.bytes);
-    print("Private Key: $private");
-    print("Public Key: $public");
+    stdout.writeln("Private Key: $private");
+    stdout.writeln("Public Key: $public");
   }
 }
 
@@ -121,7 +122,7 @@ class PrecompileBinariesCommand extends Command {
       )
       ..addOption(
         'android-min-sdk-version',
-        help: 'Android minimum rquired version (if available)',
+        help: 'Android minimum required version (if available)',
       )
       ..addOption(
         'temp-dir',
@@ -134,7 +135,6 @@ class PrecompileBinariesCommand extends Command {
       ..addFlag(
         "verbose",
         abbr: "v",
-        defaultsTo: false,
         help: "Enable verbose logging",
       );
   }
@@ -145,7 +145,7 @@ class PrecompileBinariesCommand extends Command {
   @override
   final description = 'Prebuild and upload binaries\n'
       'Private key must be passed through PRIVATE_KEY environment variable. '
-      'Use gen_key through generate priave key.\n'
+      'Use gen-key to generate the private key.\n'
       'Github token must be passed as GITHUB_TOKEN environment variable.\n';
 
   @override
@@ -157,19 +157,27 @@ class PrecompileBinariesCommand extends Command {
 
     final privateKeyString = Platform.environment['PRIVATE_KEY'];
     if (privateKeyString == null) {
-      throw ArgumentError('Missing PRIVATE_KEY environment variable');
+      throw ConfigurationException(
+        'Missing PRIVATE_KEY environment variable.',
+      );
     }
     final githubToken = Platform.environment['GITHUB_TOKEN'];
     if (githubToken == null) {
-      throw ArgumentError('Missing GITHUB_TOKEN environment variable');
+      throw ConfigurationException(
+        'Missing GITHUB_TOKEN environment variable.',
+      );
     }
     final privateKey = HEX.decode(privateKeyString);
     if (privateKey.length != 64) {
-      throw ArgumentError('Private key must be 64 bytes long');
+      throw ConfigurationException(
+        'PRIVATE_KEY must be a 64-byte Ed25519 private key.',
+      );
     }
     final manifestDir = argResults!['manifest-dir'] as String;
     if (!Directory(manifestDir).existsSync()) {
-      throw ArgumentError('Manifest directory does not exist: $manifestDir');
+      throw ConfigurationException(
+        'Manifest directory does not exist: $manifestDir',
+      );
     }
     String? androidMinSdkVersionString =
         argResults!['android-min-sdk-version'] as String?;
@@ -177,15 +185,16 @@ class PrecompileBinariesCommand extends Command {
     if (androidMinSdkVersionString != null) {
       androidMinSdkVersion = int.tryParse(androidMinSdkVersionString);
       if (androidMinSdkVersion == null) {
-        throw ArgumentError(
-            'Invalid android-min-sdk-version: $androidMinSdkVersionString');
+        throw ConfigurationException(
+          'Invalid android-min-sdk-version: $androidMinSdkVersionString',
+        );
       }
     }
-    final targetStrigns = argResults!['target'] as List<String>;
-    final targets = targetStrigns.map((target) {
+    final targetStrings = argResults!['target'] as List<String>;
+    final targets = targetStrings.map((target) {
       final res = Target.forRustTriple(target);
       if (res == null) {
-        throw ArgumentError('Invalid target: $target');
+        throw ConfigurationException('Invalid target: $target');
       }
       return res;
     }).toList(growable: false);
@@ -242,7 +251,7 @@ Future<void> runMain(List<String> args) async {
       return AndroidEnvironment.clangLinkerWrapper(args);
     }
 
-    final runner = CommandRunner('build_tool', 'Cargokit built_tool')
+    final runner = CommandRunner('build_tool', 'Cargokit build tool')
       ..addCommand(BuildPodCommand())
       ..addCommand(BuildGradleCommand())
       ..addCommand(BuildCMakeCommand())

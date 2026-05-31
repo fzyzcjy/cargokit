@@ -19,6 +19,9 @@ linter:
   rules:
     - prefer_relative_imports
     - directives_ordering
+    - avoid_redundant_argument_values
+    - no_adjacent_strings_in_list
+    - unnecessary_parenthesis
 
 # analyzer:
 #   exclude:
