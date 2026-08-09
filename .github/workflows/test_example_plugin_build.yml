@@ -83,4 +83,14 @@ jobs:
             export JAVA_HOME=$JAVA_HOME_17_X64
           fi
           flutter build apk --${{ matrix.build_mode }} -v
-
+          apk_path="build/app/outputs/flutter-apk/app-${{ matrix.build_mode }}.apk"
+          jar tf "$apk_path" | grep -Fx "lib/arm64-v8a/libhello_rust_ffi_plugin.so"
+      - name: Test Android library task dependencies
+        if: matrix.os == 'ubuntu-latest' && matrix.build_mode == 'debug'
+        shell: bash
+        working-directory: ${{ env.EXAMPLE_DIR }}
+        run: |
+          flutter build apk --debug --config-only
+          ./android/gradlew --project-dir android --no-daemon \
+            --init-script ../cargokit/test/gradle/assert_android_library_task_dependencies.gradle \
+            :hello_rust_ffi_plugin:tasks

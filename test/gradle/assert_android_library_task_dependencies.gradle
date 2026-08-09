@@ -1,0 +1,29 @@
+gradle.projectsEvaluated {
+    def projectsWithCargoKit = gradle.rootProject.allprojects.findAll {
+        it.extensions.findByName("cargokit") != null
+    }
+    assert projectsWithCargoKit.size() == 1 : "Expected one project with CargoKit, found ${projectsWithCargoKit*.path}"
+
+    projectsWithCargoKit.each { project ->
+        def cargoTasks = project.tasks.findAll { it.name.startsWith("cargokitCargoBuild") }
+        assert !cargoTasks.empty : "No CargoKit build tasks found in ${project.path}"
+
+        cargoTasks.each { cargoTask ->
+            def buildType = cargoTask.buildMode.capitalize()
+            def consumerTaskNames = [
+                "merge${buildType}NativeLibs",
+                "merge${buildType}JniLibFolders",
+                "copy${buildType}JniLibsProjectOnly",
+                "copy${buildType}JniLibsProjectAndLocalJars",
+            ]
+
+            consumerTaskNames.each { consumerTaskName ->
+                def consumerTask = project.tasks.findByName(consumerTaskName)
+                assert consumerTask != null : "Missing ${project.path}:${consumerTaskName}"
+
+                def dependencies = consumerTask.taskDependencies.getDependencies(consumerTask)
+                assert dependencies.contains(cargoTask) : "${consumerTask.path} does not depend on ${cargoTask.path}"
+            }
+        }
+    }
+}
