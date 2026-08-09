@@ -1,5 +1,5 @@
-def targetProjectPath = gradle.startParameter.projectProperties["cargokitTestProjectPath"]
-assert targetProjectPath != null : "Pass -PcargokitTestProjectPath=:project"
+def targetProjectPath = System.getenv("CARGOKIT_TEST_PROJECT_PATH")
+assert targetProjectPath != null : "Set CARGOKIT_TEST_PROJECT_PATH=:project"
 
 gradle.projectsEvaluated {
     def project = gradle.rootProject.findProject(targetProjectPath)

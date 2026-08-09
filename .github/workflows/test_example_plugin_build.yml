@@ -91,7 +91,7 @@ jobs:
         working-directory: ${{ env.EXAMPLE_DIR }}
         run: |
           flutter build apk --debug --config-only
-          ./android/gradlew --project-dir android --no-daemon \
+          CARGOKIT_TEST_PROJECT_PATH=:hello_rust_ffi_plugin \
+            ./android/gradlew --project-dir android --no-daemon \
             --init-script ../cargokit/test/gradle/assert_android_library_task_dependencies.gradle \
-            -PcargokitTestProjectPath=:hello_rust_ffi_plugin \
             :hello_rust_ffi_plugin:tasks
