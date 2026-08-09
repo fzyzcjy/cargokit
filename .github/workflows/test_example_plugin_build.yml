@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           wrapper_path="$EXAMPLE_DIR/android/gradle/wrapper/gradle-wrapper.properties"
-          sed -i.bak 's/gradle-8\.0-all\.zip/gradle-8.3-all.zip/' "$wrapper_path"
+          sed -i.bak 's/gradle-8\.0-all\.zip/gradle-8.7-all.zip/' "$wrapper_path"
           rm "$wrapper_path.bak"
       - name: Install GTK
         if: (matrix.os == 'ubuntu-latest')
