@@ -189,7 +189,12 @@ class AndroidEnvironment {
     if (["arm64-v8a", "x86_64"].contains(target.android)) {
       rustFlags = '$rustFlags-L\x1f$workaroundDir\x1f';
 
-      const pageSizeArgs = ["-C", "link-arg=-Wl,--hash-style=both", "-C", "link-arg=-Wl,-z,max-page-size=16384"];
+      const pageSizeArgs = [
+        "-C",
+        "link-arg=-Wl,--hash-style=both",
+        "-C",
+        "link-arg=-Wl,-z,max-page-size=16384"
+      ];
       final pageSizeArgsString = pageSizeArgs.join("\x1f");
 
       rustFlags = '$rustFlags$pageSizeArgsString';
