@@ -105,5 +105,5 @@ jobs:
           flutter build apk --debug --config-only
           CARGOKIT_TEST_PROJECT_PATH=:hello_rust_ffi_plugin \
             ./android/gradlew --project-dir android --no-daemon \
-            --init-script ../cargokit/test/gradle/assert_android_library_task_dependencies.gradle \
+            --init-script ../../cargokit/test/gradle/assert_android_library_task_dependencies.gradle \
             :hello_rust_ffi_plugin:tasks
