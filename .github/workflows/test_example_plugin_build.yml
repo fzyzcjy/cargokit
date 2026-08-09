@@ -42,6 +42,18 @@ jobs:
       - uses: subosito/flutter-action@44ac965b96f18d999802d4b807e3256d5a3f9fa1 # 2.16.0
         with:
           channel: "stable"
+      - name: Update Android build dependencies
+        shell: bash
+        run: |
+          wrapper_path="$EXAMPLE_DIR/android/gradle/wrapper/gradle-wrapper.properties"
+          sed -i.bak 's/gradle-8\.0-all\.zip/gradle-8.7-all.zip/' "$wrapper_path"
+          rm "$wrapper_path.bak"
+          settings_path="$EXAMPLE_DIR/android/settings.gradle"
+          sed -i.bak \
+            -e 's/id "com.android.application" version "8\.1\.0"/id "com.android.application" version "8.6.0"/' \
+            -e 's/id "org.jetbrains.kotlin.android" version "1\.7\.10"/id "org.jetbrains.kotlin.android" version "2.0.0"/' \
+            "$settings_path"
+          rm "$settings_path.bak"
       - name: Install GTK
         if: (matrix.os == 'ubuntu-latest')
         run: sudo apt-get update && sudo apt-get install libgtk-3-dev
@@ -83,4 +95,15 @@ jobs:
             export JAVA_HOME=$JAVA_HOME_17_X64
           fi
           flutter build apk --${{ matrix.build_mode }} -v
-
+          apk_path="build/app/outputs/flutter-apk/app-${{ matrix.build_mode }}.apk"
+          jar tf "$apk_path" | grep -Fx "lib/arm64-v8a/libhello_rust_ffi_plugin.so"
+      - name: Test Android library task dependencies
+        if: matrix.os == 'ubuntu-latest' && matrix.build_mode == 'debug'
+        shell: bash
+        working-directory: ${{ env.EXAMPLE_DIR }}
+        run: |
+          flutter build apk --debug --config-only
+          CARGOKIT_TEST_PROJECT_PATH=:hello_rust_ffi_plugin \
+            ./android/gradlew --project-dir android --no-daemon \
+            --init-script ../../cargokit/test/gradle/assert_android_library_task_dependencies.gradle \
+            :hello_rust_ffi_plugin:tasks
