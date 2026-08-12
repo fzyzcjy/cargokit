@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
+import 'android_environment.dart';
 import 'artifacts_provider.dart';
 import 'builder.dart';
 import 'environment.dart';
@@ -42,11 +43,26 @@ class BuildGradle {
       final outputDir = path.join(Environment.outputDir, target.android!);
       Directory(outputDir).createSync(recursive: true);
 
+      final outputLibraries = <File>[];
+
       for (final lib in libs) {
         if (lib.type == AritifactType.dylib) {
-          File(lib.path).copySync(path.join(outputDir, lib.finalFileName));
+          final outputLibrary = File(path.join(outputDir, lib.finalFileName));
+          File(lib.path).copySync(outputLibrary.path);
+          outputLibraries.add(outputLibrary);
         }
       }
+
+      AndroidEnvironment(
+        sdkPath: environment.androidSdkPath!,
+        ndkVersion: environment.androidNdkVersion!,
+        minSdkVersion: environment.androidMinSdkVersion!,
+        targetTempDir: environment.targetTempDir,
+        target: target,
+      ).copyLibCppSharedIfNeeded(
+        nativeLibraries: outputLibraries,
+        outputDir: outputDir,
+      );
     }
   }
 }

@@ -94,9 +94,15 @@ jobs:
           else
             export JAVA_HOME=$JAVA_HOME_17_X64
           fi
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.build_mode }}" == "debug" ]]; then
+            ../../cargokit/test/gradle/use_cpp_runtime_fixture.sh "$PWD/.."
+          fi
           flutter build apk --${{ matrix.build_mode }} -v
           apk_path="build/app/outputs/flutter-apk/app-${{ matrix.build_mode }}.apk"
           jar tf "$apk_path" | grep -Fx "lib/arm64-v8a/libhello_rust_ffi_plugin.so"
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.build_mode }}" == "debug" ]]; then
+            jar tf "$apk_path" | grep -Fx "lib/arm64-v8a/libc++_shared.so"
+          fi
       - name: Test Android library task dependencies
         if: matrix.os == 'ubuntu-latest' && matrix.build_mode == 'debug'
         shell: bash
