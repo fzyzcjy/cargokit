@@ -61,7 +61,8 @@ void main() {
       );
     };
 
-    environment.copyLibCppSharedIfNeeded(
+    copyLibCppSharedIfNeeded(
+      environment: environment,
       nativeLibraries: [nativeLibrary],
       outputDir: outputDirectory.path,
     );
@@ -77,7 +78,8 @@ void main() {
           stdout: '0x0000000000000001 (NEEDED) Shared library: [liblog.so]',
         );
 
-    environment.copyLibCppSharedIfNeeded(
+    copyLibCppSharedIfNeeded(
+      environment: environment,
       nativeLibraries: [nativeLibrary],
       outputDir: outputDirectory.path,
     );
@@ -90,13 +92,13 @@ void main() {
 
   test('recognizes only an ELF DT_NEEDED libc++ runtime', () {
     expect(
-      AndroidEnvironment.hasLibCppSharedDependency(
+      hasLibCppSharedDependency(
         '0x0000000000000001 (NEEDED) Shared library: [libc++_shared.so]',
       ),
       isTrue,
     );
     expect(
-      AndroidEnvironment.hasLibCppSharedDependency(
+      hasLibCppSharedDependency(
         '0x000000000000000e (SONAME) Library soname: [libc++_shared.so]',
       ),
       isFalse,
@@ -124,7 +126,7 @@ void main() {
 
       expect(target.androidNdkTriple, entry.value);
       expect(
-        targetEnvironment.libCppSharedPath(),
+        libCppSharedPath(targetEnvironment),
         path.joinAll([
           temporaryDirectory.path,
           'ndk',

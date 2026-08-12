@@ -177,56 +177,6 @@ class AndroidEnvironment {
     };
   }
 
-  /// Copies the matching NDK C++ runtime only when an output library needs it.
-  void copyLibCppSharedIfNeeded({
-    required Iterable<File> nativeLibraries,
-    required String outputDir,
-  }) {
-    final needsRuntime = nativeLibraries.any(_needsLibCppShared);
-    if (!needsRuntime) {
-      return;
-    }
-
-    final source = File(libCppSharedPath());
-    if (!source.existsSync()) {
-      throw StateError(
-        'Failed to find libc++_shared.so for ${target.android} at ${source.path}',
-      );
-    }
-    source.copySync(path.join(outputDir, source.uri.pathSegments.last));
-  }
-
-  /// NDK sysroot path for the C++ runtime of this Android ABI.
-  String libCppSharedPath() {
-    return path.join(
-      _toolchainPath,
-      'sysroot',
-      'usr',
-      'lib',
-      target.androidNdkTriple,
-      'libc++_shared.so',
-    );
-  }
-
-  bool _needsLibCppShared(File nativeLibrary) {
-    final readElf = path.join(
-      _toolchainPath,
-      'bin',
-      'llvm-readelf${Platform.isWindows ? '.exe' : ''}',
-    );
-    final output = runCommand(readElf, [
-      '--dynamic',
-      nativeLibrary.path,
-    ]).stdout;
-    return hasLibCppSharedDependency(output.toString());
-  }
-
-  static bool hasLibCppSharedDependency(String dynamicSection) {
-    return RegExp(
-      r'\(NEEDED\).*\[libc\+\+_shared\.so\]',
-    ).hasMatch(dynamicSection);
-  }
-
   // Workaround for libgcc missing in NDK23, inspired by cargo-ndk
   String _libGccWorkaround(String buildDir, Version ndkVersion) {
     final workaroundDir = path.join(
@@ -269,4 +219,52 @@ class AndroidEnvironment {
     }
     return rustFlags;
   }
+}
+
+/// Copies the matching NDK C++ runtime only when an output library needs it.
+void copyLibCppSharedIfNeeded({
+  required AndroidEnvironment environment,
+  required Iterable<File> nativeLibraries,
+  required String outputDir,
+}) {
+  if (!nativeLibraries
+      .any((library) => needsLibCppShared(environment, library))) {
+    return;
+  }
+
+  final source = File(libCppSharedPath(environment));
+  if (!source.existsSync()) {
+    throw StateError(
+      'Failed to find libc++_shared.so for '
+      '${environment.target.android} at ${source.path}',
+    );
+  }
+  source.copySync(path.join(outputDir, source.uri.pathSegments.last));
+}
+
+/// NDK sysroot path for the C++ runtime of this Android ABI.
+String libCppSharedPath(AndroidEnvironment environment) {
+  return path.join(
+    environment._toolchainPath,
+    'sysroot',
+    'usr',
+    'lib',
+    environment.target.androidNdkTriple,
+    'libc++_shared.so',
+  );
+}
+
+bool needsLibCppShared(AndroidEnvironment environment, File nativeLibrary) {
+  final readElf = path.join(
+    environment._toolchainPath,
+    'bin',
+    'llvm-readelf${Platform.isWindows ? '.exe' : ''}',
+  );
+  final output = runCommand(readElf, ['--dynamic', nativeLibrary.path]).stdout;
+  return hasLibCppSharedDependency(output.toString());
+}
+
+bool hasLibCppSharedDependency(String dynamicSection) {
+  return RegExp(r'\(NEEDED\).*\[libc\+\+_shared\.so\]')
+      .hasMatch(dynamicSection);
 }
