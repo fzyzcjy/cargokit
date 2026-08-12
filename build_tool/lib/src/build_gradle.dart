@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
+import 'android_environment.dart';
 import 'artifacts_provider.dart';
 import 'builder.dart';
 import 'environment.dart';
@@ -17,19 +18,7 @@ class BuildGradle {
   final CargokitUserOptions userOptions;
 
   Future<void> build() async {
-    final targets = Environment.targetPlatforms
-        .map((arch) {
-          final target = Target.forFlutterName(arch);
-          if (target == null) {
-            throw Exception(
-              "Unknown darwin target or platform: $arch, ${Environment.darwinPlatformName}",
-            );
-          }
-          return target;
-        })
-        .toSet()
-        .toList();
-
+    final targets = _targets();
     final environment = BuildEnvironment.fromEnvironment(isAndroid: true);
     final provider = ArtifactProvider(
       environment: environment,
@@ -38,15 +27,55 @@ class BuildGradle {
     final artifacts = await provider.getArtifacts(targets);
 
     for (final target in targets) {
-      final libs = artifacts[target]!;
-      final outputDir = path.join(Environment.outputDir, target.android!);
-      Directory(outputDir).createSync(recursive: true);
-
-      for (final lib in libs) {
-        if (lib.type == AritifactType.dylib) {
-          File(lib.path).copySync(path.join(outputDir, lib.finalFileName));
-        }
-      }
+      _copyTargetLibraries(
+        target: target,
+        libraries: artifacts[target]!,
+        environment: environment,
+      );
     }
+  }
+
+  List<Target> _targets() {
+    return Environment.targetPlatforms
+        .map((platform) {
+          final target = Target.forFlutterName(platform);
+          if (target == null) {
+            throw Exception('Unknown Android target platform: $platform');
+          }
+          return target;
+        })
+        .toSet()
+        .toList();
+  }
+
+  void _copyTargetLibraries({
+    required Target target,
+    required List<Artifact> libraries,
+    required BuildEnvironment environment,
+  }) {
+    final outputDir = path.join(Environment.outputDir, target.android!);
+    Directory(outputDir).createSync(recursive: true);
+    final outputLibraries = _copyDynamicLibraries(libraries, outputDir);
+    final androidEnvironment = AndroidEnvironment(
+      sdkPath: environment.androidSdkPath!,
+      ndkVersion: environment.androidNdkVersion!,
+      minSdkVersion: environment.androidMinSdkVersion!,
+      targetTempDir: environment.targetTempDir,
+      target: target,
+    );
+    copyLibCppSharedIfNeeded(
+      environment: androidEnvironment,
+      nativeLibraries: outputLibraries,
+      outputDir: outputDir,
+    );
+  }
+
+  List<File> _copyDynamicLibraries(List<Artifact> libraries, String outputDir) {
+    return libraries
+        .where((library) => library.type == AritifactType.dylib)
+        .map((library) {
+      final output = File(path.join(outputDir, library.finalFileName));
+      return File(library.path).copySync(output.path);
+    }).toList();
   }
 }
