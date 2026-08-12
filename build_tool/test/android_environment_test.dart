@@ -103,22 +103,43 @@ void main() {
     );
   });
 
-  test('maps Android ABIs to their NDK sysroot directories', () {
-    expect(
-      Target.forFlutterName('android-arm')!.androidNdkTriple,
-      'arm-linux-androideabi',
-    );
-    expect(
-      Target.forFlutterName('android-arm64')!.androidNdkTriple,
-      'aarch64-linux-android',
-    );
-    expect(
-      Target.forFlutterName('android-x86')!.androidNdkTriple,
-      'i686-linux-android',
-    );
-    expect(
-      Target.forFlutterName('android-x64')!.androidNdkTriple,
-      'x86_64-linux-android',
-    );
+  test('maps every Android ABI to its NDK C++ runtime', () {
+    final expectedNdkTriples = {
+      'android-arm': 'arm-linux-androideabi',
+      'android-arm64': 'aarch64-linux-android',
+      'android-x86': 'i686-linux-android',
+      'android-x64': 'x86_64-linux-android',
+    };
+
+    for (final entry in expectedNdkTriples.entries) {
+      final target = Target.forFlutterName(entry.key)!;
+      final targetEnvironment = AndroidEnvironment(
+        sdkPath: temporaryDirectory.path,
+        ndkVersion: 'test-ndk',
+        minSdkVersion: target.androidMinSdkVersion!,
+        targetTempDir: temporaryDirectory.path,
+        target: target,
+        hostTag: 'linux-x86_64',
+      );
+
+      expect(target.androidNdkTriple, entry.value);
+      expect(
+        targetEnvironment.libCppSharedPath(),
+        path.joinAll([
+          temporaryDirectory.path,
+          'ndk',
+          'test-ndk',
+          'toolchains',
+          'llvm',
+          'prebuilt',
+          'linux-x86_64',
+          'sysroot',
+          'usr',
+          'lib',
+          entry.value,
+          'libc++_shared.so',
+        ]),
+      );
+    }
   });
 }

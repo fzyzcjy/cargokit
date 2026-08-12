@@ -187,22 +187,25 @@ class AndroidEnvironment {
       return;
     }
 
-    final source = File(
-      path.join(
-        _toolchainPath,
-        'sysroot',
-        'usr',
-        'lib',
-        target.androidNdkTriple,
-        'libc++_shared.so',
-      ),
-    );
+    final source = File(libCppSharedPath());
     if (!source.existsSync()) {
       throw StateError(
         'Failed to find libc++_shared.so for ${target.android} at ${source.path}',
       );
     }
     source.copySync(path.join(outputDir, source.uri.pathSegments.last));
+  }
+
+  /// NDK sysroot path for the C++ runtime of this Android ABI.
+  String libCppSharedPath() {
+    return path.join(
+      _toolchainPath,
+      'sysroot',
+      'usr',
+      'lib',
+      target.androidNdkTriple,
+      'libc++_shared.so',
+    );
   }
 
   bool _needsLibCppShared(File nativeLibrary) {
