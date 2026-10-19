@@ -47,6 +47,34 @@ class BuildGradle {
           File(lib.path).copySync(path.join(outputDir, lib.finalFileName));
         }
       }
+
+      if (Environment.copyLibcxxShared) {
+        final hostArch = Platform.isMacOS
+            ? 'darwin-x86_64'
+            : (Platform.isLinux ? 'linux-x86_64' : 'windows-x86_64');
+        final ndkTarget = target.rust == 'armv7-linux-androideabi'
+            ? 'arm-linux-androideabi'
+            : target.rust;
+        final cppRuntimePath = path.joinAll([
+          Environment.sdkPath,
+          'ndk',
+          Environment.ndkVersion,
+          'toolchains',
+          'llvm',
+          'prebuilt',
+          hostArch,
+          'sysroot',
+          'usr',
+          'lib',
+          ndkTarget,
+          'libc++_shared.so',
+        ]);
+        final cppRuntime = File(cppRuntimePath);
+        if (!cppRuntime.existsSync()) {
+          throw Exception('Android C++ runtime not found: $cppRuntimePath');
+        }
+        cppRuntime.copySync(path.join(outputDir, 'libc++_shared.so'));
+      }
     }
   }
 }

@@ -42,6 +42,8 @@ class Environment {
   static String get javaHome => _getEnvPath("CARGOKIT_JAVA_HOME");
   static List<String> get targetPlatforms =>
       _getEnv("CARGOKIT_TARGET_PLATFORMS").split(',');
+  static bool get copyLibcxxShared =>
+      _getEnvOptional('CARGOKIT_COPY_LIBCXX_SHARED')?.toLowerCase() == 'true';
 
   static String? get ohosSdkHome => _getEnvOptional("CARGOKIT_OHOS_SDK_HOME");
 

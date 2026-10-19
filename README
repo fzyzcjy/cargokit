@@ -6,3 +6,17 @@ for a tutorial on how to use Cargokit.
 
 Example plugin available at https://github.com/irondash/hello_rust_ffi_plugin.
 
+For Android plugins that need the NDK's shared C++ runtime, enable copying it in
+the plugin's Gradle configuration:
+
+```groovy
+cargokit {
+    manifestDir = "../rust"
+    libname = "my_crate"
+    copyLibcxxShared = true
+}
+```
+
+`copyLibcxxShared` defaults to `false`. When enabled, Cargokit copies the
+matching NDK `libc++_shared.so` beside the Rust libraries for each Android ABI.
+

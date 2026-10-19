@@ -94,10 +94,17 @@ class BuildEnvironment {
       manifestDir: manifestDir,
     );
     final crateInfo = CrateInfo.load(manifestDir);
+    // CMake stores its generator and NDK selection in Cargo's target directory.
+    final targetTempDir = isAndroid && Platform.isWindows
+        ? path.join(
+            Environment.targetTempDir,
+            'android-${Environment.ndkVersion}-ninja',
+          )
+        : Environment.targetTempDir;
     return BuildEnvironment(
       configuration: buildConfiguration,
       crateOptions: crateOptions,
-      targetTempDir: Environment.targetTempDir,
+      targetTempDir: targetTempDir,
       manifestDir: manifestDir,
       crateInfo: crateInfo,
       isAndroid: isAndroid,
