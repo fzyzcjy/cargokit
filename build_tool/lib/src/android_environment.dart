@@ -84,6 +84,17 @@ class AndroidEnvironment {
         : (Platform.isLinux ? "linux-x86_64" : "windows-x86_64");
 
     final ndkPath = path.join(sdkPath, 'ndk', ndkVersion);
+    final sysroot = path.join(
+      ndkPath,
+      'toolchains',
+      'llvm',
+      'prebuilt',
+      hostArch,
+      'sysroot',
+    );
+    if (!Directory(sysroot).existsSync()) {
+      throw Exception('Android NDK sysroot not found: $sysroot');
+    }
     final toolchainPath = path.join(
       ndkPath,
       'toolchains',
@@ -107,6 +118,19 @@ class AndroidEnvironment {
     }
 
     final targetArg = '--target=${target.rust}$minSdkVersion';
+
+    // bindgen uses host libclang, so it needs the Android target headers explicitly.
+    final bindgenTarget = target.rust.replaceAll('-', '_');
+    final bindgenHeaderTarget = target.rust == 'armv7-linux-androideabi'
+        ? 'arm-linux-androideabi'
+        : target.rust;
+    final bindgenSysroot = _clangPath(sysroot);
+    final bindgenTargetHeaders = _clangPath(
+      path.join(sysroot, 'usr', 'include', bindgenHeaderTarget),
+    );
+    final bindgenArgs =
+        '$targetArg --sysroot="$bindgenSysroot" '
+        '-isystem "$bindgenTargetHeaders"';
 
     final ccKey = 'CC_${target.rust}';
     final ccValue = path.join(toolchainPath, 'clang$exe');
@@ -156,12 +180,20 @@ class AndroidEnvironment {
       ranlibKey: ranlibValue,
       rustFlagsKey: rustFlagsValue,
       linkerKey: selfPath,
+      'ANDROID_NDK_HOME': ndkPath,
+      'ANDROID_NDK_ROOT': ndkPath,
+      'ANDROID_NDK': ndkPath,
+      'BINDGEN_EXTRA_CLANG_ARGS_$bindgenTarget': bindgenArgs,
       // Recognized by main() so we know when we're acting as a wrapper
       '_CARGOKIT_NDK_LINK_TARGET': targetArg,
       '_CARGOKIT_NDK_LINK_CLANG': ccValue,
       'CARGOKIT_TOOL_TEMP_DIR': toolTempDir,
+      if (Platform.isWindows) 'CMAKE_GENERATOR': 'Ninja',
     };
   }
+
+  String _clangPath(String value) =>
+      path.normalize(value).replaceAll(r'\', '/');
 
   // Workaround for libgcc missing in NDK23, inspired by cargo-ndk
   String _libGccWorkaround(String buildDir, Version ndkVersion) {
